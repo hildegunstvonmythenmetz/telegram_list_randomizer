@@ -32,10 +32,20 @@ def answer_inline_query(bot, update):
     if not query:
         print('query failed')
         return
+    # split the query string into a list of items
     items = tuple(query.split())
     results = []
+    # check if there are at least two items in the list
     if check_input(items):
-        # pick item from list
+        # an inline query only supports a few answer formats (stickers, gifs, articles, ...)
+        # the article format is the best fit for our needs, since it's the only one,
+        # where the text can be customized.
+
+        # when a user selects an article the bot can send a text message (InputTextMessageContent),
+        # to the chat
+
+        # the bot currently supports two options: picking a random item from a list and shuffling the list
+        # picking a random item
         results.append(InlineQueryResultArticle(
             id=uuid.uuid4(),
             title='Randomize',
@@ -44,7 +54,7 @@ def answer_inline_query(bot, update):
             input_message_content=InputTextMessageContent(pick_and_highlight_item(items), parse_mode='HTML')
         ))
 
-        # shuffle the list
+        # shuffling the list
         results.append(InlineQueryResultArticle(
             id=uuid.uuid4(),
             title='Shuffle',
