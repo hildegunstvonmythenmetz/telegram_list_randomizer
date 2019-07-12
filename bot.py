@@ -82,7 +82,7 @@ def answer_inline_query(bot, update):
 # a telegram message with the api.
 # therefore we need to store the list, somewhere where it can be accessed with an id later on and only
 # send the id to the client
-def answer_reshuffle_callbackquery(bot, update, update_queue, chat_data, job_queue, user_data):
+def answer_reshuffle_callbackquery(bot, update):
     bot.edit_message_text(text=shuffle_list(update.callback_query.data.split()),
                           reply_markup=shuffle_reply_markup(
                               update.callback_query.data
@@ -97,14 +97,7 @@ def set_up_inline_handler(updater):
 
 
 def set_up_shuffle_button_callback_handler(updater):
-    reshuffle_button_callback_handler = CallbackQueryHandler(answer_reshuffle_callbackquery,
-                                                           pass_update_queue=True,
-                                                           pass_job_queue=True,
-                                                           pattern=None,
-                                                           pass_groups=True,
-                                                           pass_groupdict=True,
-                                                           pass_user_data=True,
-                                                           pass_chat_data=True)
+    reshuffle_button_callback_handler = CallbackQueryHandler(answer_reshuffle_callbackquery)
     updater.dispatcher.add_handler(reshuffle_button_callback_handler)
 
 
