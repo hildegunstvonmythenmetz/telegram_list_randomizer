@@ -18,6 +18,12 @@ def shuffle_list(items):
     return '\n'.join(shuffled)
 
 
+def shuffle_reply_markup(callback_data):
+    if len(callback_data) <= 64:
+        return InlineKeyboardMarkup([[InlineKeyboardButton("Shuffle", callback_data=callback_data)]])
+    return None
+
+
 def pick_and_highlight_item(items):
     pick = random.randrange(0, len(items))
     print('Picked {}', pick)
@@ -57,14 +63,12 @@ def answer_inline_query(bot, update):
             input_message_content=InputTextMessageContent(pick_and_highlight_item(items), parse_mode='HTML')
         ))
 
-
-        reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Shuffle", callback_data="1234")]])
         # shuffling the list
         results.append(InlineQueryResultArticle(
             id=uuid.uuid4(),
             title='Shuffle',
             description='...',
-            reply_markup=reply_markup,
+            reply_markup=shuffle_reply_markup(query),
             thumb_url='https://i.imgur.com/CA4eywa.png',
             input_message_content=InputTextMessageContent(shuffle_list(items), parse_mode='HTML')
         ))
@@ -72,11 +76,19 @@ def answer_inline_query(bot, update):
     bot.answer_inline_query(update.inline_query.id, results, cache_time=0)
 
 
-def answer_shuffle_callbackquery(bot, update, update_queue, chat_data, job_queue, user_data):
-    print(update)
-    print(bot, update_queue, chat_data, job_queue)
-
-
+# reshuffling a list is a problem, because when the button is pressed,
+# we have no way of knowing what the message content is. we only have the callback data of the inlinebutton.
+# this data is limited to a length of 64 characters. also it's impossible to get the content of
+# a telegram message with the api.
+# therefore we need to store the list, somewhere where it can be accessed with an id later on and only
+# send the id to the client
+def answer_reshuffle_callbackquery(bot, update, update_queue, chat_data, job_queue, user_data):
+    bot.edit_message_text(text=shuffle_list(update.callback_query.data.split()),
+                          reply_markup=shuffle_reply_markup(
+                              update.callback_query.data
+                          ),
+                          inline_message_id=update.callback_query.inline_message_id)
+    bot.answer_callback_query(update.callback_query.id, text="Shuffled the list")
 
 
 def set_up_inline_handler(updater):
@@ -85,7 +97,7 @@ def set_up_inline_handler(updater):
 
 
 def set_up_shuffle_button_callback_handler(updater):
-    shuffle_button_callback_handler = CallbackQueryHandler(answer_shuffle_callbackquery,
+    reshuffle_button_callback_handler = CallbackQueryHandler(answer_reshuffle_callbackquery,
                                                            pass_update_queue=True,
                                                            pass_job_queue=True,
                                                            pattern=None,
@@ -93,7 +105,7 @@ def set_up_shuffle_button_callback_handler(updater):
                                                            pass_groupdict=True,
                                                            pass_user_data=True,
                                                            pass_chat_data=True)
-    updater.dispatcher.add_handler(shuffle_button_callback_handler)
+    updater.dispatcher.add_handler(reshuffle_button_callback_handler)
 
 
 def init():
